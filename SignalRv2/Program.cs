@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.ResponseCompression;
 using SignalRv2.Hubs;
 using SignalRv2.Client.Pages;
 using SignalRv2.Components;
+using SignalRv2.Client.ChatServices;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +17,7 @@ builder.Services.AddResponseCompression(opts =>
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveWebAssemblyComponents();
+builder.Services.AddScoped<ChatService>();
 
 var app = builder.Build();
 
