@@ -1,15 +1,14 @@
 ﻿@page "/ChatPage"
 @rendermode InteractiveWebAssembly
-@using SignalRv2.Client.ChatServices;
-@inject ChatService chatService 
-@inject NavigationManager Navigation
-@implements IDisposable
 @using ChatModels;
+@using SignalRv2.Client.ChatServices;
+@inject ChatService chatService
+@inject NavigationManager navigationManager
 
 <PageTitle>Chat</PageTitle>
 
 <div class="row">
-    <div class="col-lg-7">
+	<div class="col-lg-7">
 		<div class="card">
 			<div class="card-header">Chat Hub</div>
 			<div class="card-body">
@@ -17,54 +16,72 @@
 					@foreach (var chat in chatService.Chats)
 					{
 						<li class="list-group-item mb-2">
-                        @chat.TimeSent;
-                            <br />
-                            <span class="fw-bold">@chat.UserName;</span>
-                            <br />
-                            @chat.Message
+							@chat.TimeSent;
+							<br />
+							<span class="fw-bold">@chat.UserName;</span>
+							<br />
+							@chat.Message
 
-                        </li>
+						</li>
 					}
 				</ul>
-                <div class="mt-3">
-                    <EditForm Model="chat" OnValidSubmit="SendMessageClicked">
-                        <DataAnnotationsValidator />
-                        <div class="vstack gap-1">
-                            <InputText @bind-Value="chat.UserName" class="form-control w-25" placeholder="Username" />
-                            <InputTextArea @bind-Value="chat.Message" class="form-control" placeholder="Message" />
+				<div class="mt-3">
+					<EditForm Model="chat" OnValidSubmit="SendMessageClicked">
+						<DataAnnotationsValidator />
+						<div class="vstack gap-1">
+							<InputText @bind-Value="chat.UserName" class="form-control w-25" placeholder="Username" />
+							<InputTextArea @bind-Value="chat.Message" class="form-control" placeholder="Message" />
 
-                        </div>
-                        <button class="float-end btn btn-success mt-3" type="submit">Send</button>
-                    </EditForm>
-                </div>
+						</div>
+						<button class="float-end btn btn-success mt-3" type="submit">Send</button>
+					</EditForm>
+				</div>
 			</div>
 			<div class="card-footer fw-bold">
 				@if (!chatService.IsConnected)
-                {
+				{
 					<div class="alert alert-danger">Chat Disconnected</div>
-                }
-                else
-                {
+				}
+				else
+				{
 					<div class="alert alert-success">Chat Connected</div>
-                }
+				}
 			</div>
 		</div>
-    </div>
+	</div>
 </div>
 
 
 
 
 @code {
-    public static string? StoredUserName { get; set; }
-    private ChatModels.Chat chat = new();
+	private Chat chat = new();
+	private HubConnection? _hubConnection;
+	public List<Chat> Chats { get; set; } = [];
 
-    protected override async Task OnInitializedAsync()
-    {
-        chatService.InvokeChatDisplay += StateHasChanged;
-        await chatService.StartConnectionAsync();
-        chatService.RecieveMessage();
-    }
-    async void SendMessageClicked() => await chatService.SendChat(chat);
-    public void Dispose() => chatService.InvokeChatDisplay -= StateHasChanged;
+	protected override async Task OnInitializedAsync()
+	{
+		_hubConnection = new HubConnectionBuilder()
+			.WithUrl(navigationManager.ToAbsoluteUri("/chathub"))
+			.Build();
+		_hubConnection.On<Chat>("RecieveMessage", (chat) =>
+		{
+			Chats.Add(chat);
+			InvokeAsync(() => StateHasChanged());
+		});
+		await _hubConnection.StartAsync();
+		var httpClient = new HttpClient();
+		Chats = await httpClient.GetFromJsonAsync<List<Chat>>("https://localhost:7273/api/chat");
+	}
+
+	public bool IsConnected => _hubConnection!.State == HubConnectionState.Connected;
+
+	public void SendChat()
+	{
+		_hubConnection!.SendAsync("SendMessage", chat);
+		chat.Message = null;
+	}
+
+
+
 }
