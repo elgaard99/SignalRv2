@@ -2,7 +2,6 @@
 @rendermode InteractiveWebAssembly
 @using ChatModels;
 @using SignalRv2.Client.ChatServices;
-@inject ChatService chatService
 @inject NavigationManager navigationManager
 
 <PageTitle>Chat</PageTitle>
@@ -13,7 +12,7 @@
 			<div class="card-header">Chat Hub</div>
 			<div class="card-body">
 				<ul id="messagesList" class="list-group">
-					@foreach (var chat in chatService.Chats)
+					@foreach (var chat in Chats)
 					{
 						<li class="list-group-item mb-2">
 							@chat.TimeSent;
@@ -38,7 +37,7 @@
 				</div>
 			</div>
 			<div class="card-footer fw-bold">
-				@if (!chatService.IsConnected)
+				@if (!IsConnected)
 				{
 					<div class="alert alert-danger">Chat Disconnected</div>
 				}
