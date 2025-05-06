@@ -6,6 +6,7 @@ using SignalRv2.Client.ChatServices;
 using SignalRv2.Data;
 using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore;
+using SignalRv2.Repos;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,7 +16,8 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddDbContext<AppDbContext>(options =>
 			options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
+builder.Services.AddControllers();
+builder.Services.AddScoped<ChatRepo>();
 builder.Services.AddSignalR();
 builder.Services.AddScoped<ChatService>();
 builder.Services.AddHttpClient();
@@ -53,7 +55,7 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveWebAssemblyRenderMode()
     .AddAdditionalAssemblies(typeof(SignalRv2.Client._Imports).Assembly);
-
+app.MapControllers();
 app.MapHub<ChatHub>("/chathub");
 
 app.Run();
