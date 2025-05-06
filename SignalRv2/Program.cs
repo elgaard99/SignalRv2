@@ -3,21 +3,30 @@ using SignalRv2.Hubs;
 using SignalRv2.Client.Pages;
 using SignalRv2.Components;
 using SignalRv2.Client.ChatServices;
+using SignalRv2.Data;
+using Microsoft.Extensions.Configuration;
+using Microsoft.EntityFrameworkCore;
+
 
 var builder = WebApplication.CreateBuilder(args);
+// Add services to the container.
+builder.Services.AddRazorComponents()
+	.AddInteractiveWebAssemblyComponents();
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+			options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddSignalR();
-
+builder.Services.AddScoped<ChatService>();
+builder.Services.AddHttpClient();
 builder.Services.AddResponseCompression(opts =>
 {
     opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
         ["application/octet-stream"]);
 });
 
-// Add services to the container.
-builder.Services.AddRazorComponents()
-    .AddInteractiveWebAssemblyComponents();
-builder.Services.AddScoped<ChatService>();
+
+
 
 var app = builder.Build();
 
